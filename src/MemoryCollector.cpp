@@ -62,14 +62,14 @@ std::string MemoryCollector::getFormattedData() {
 
     std::ostringstream oss;
     oss << std::fixed << std::setprecision(2);
-    oss << "Memory: " << used_percent << "% ("
+    oss << "Memory:\n" << "  " << used_percent << "% ("
         << used_gb << " GiB / " << total_gb << " GiB)";
 
     // Опционально: swap
     if (swap_total_kb > 0) {
         double swap_used = swap_total_kb - swap_free_kb;
         double swap_percent = (swap_used / swap_total_kb) * 100.0;
-        oss << " | Swap: " << swap_percent << "%";
+        oss << " | Swap: " << swap_percent << "%\n";
     }
 
     return oss.str();

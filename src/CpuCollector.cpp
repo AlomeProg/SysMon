@@ -149,11 +149,11 @@ std::string CpuCollector::getFormattedData() {
     if (cpu_usage_percent_ < 0) {
         oss << "CPU: N/A";
     } else {
-        oss << "CPU: " << cpu_usage_percent_ << "%";
+        oss << "CPU: " << cpu_usage_percent_ << "%\n";
     }
 
     if (collect_per_core_ && !core_usage_percents_.empty()) {
-        oss << " [";
+        oss << "  [";
         for (size_t i = 0; i < core_usage_percents_.size(); ++i) {
             if (i > 0) oss << ", ";
             if (core_usage_percents_[i] < 0) {
@@ -162,7 +162,7 @@ std::string CpuCollector::getFormattedData() {
                 oss << "C" << i << ":" << core_usage_percents_[i];
             }
         }
-        oss << "]";
+        oss << "]\n";
     }
 
     return oss.str();

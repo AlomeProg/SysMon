@@ -1,4 +1,4 @@
-// g++ src/main.cpp src/CpuCollector.cpp src/MemoryCollector.cpp -o sysmon
+// g++ src/main.cpp src/CpuCollector.cpp src/MemoryCollector.cpp src/DiskCollector.cpp -o sysmon
 
 #include <iostream>
 #include <unistd.h>
@@ -10,6 +10,7 @@
 #include "CpuCollector.hpp"
 #include "MemoryCollector.hpp"
 #include "DiskCollector.hpp"
+#include "NetCollector.hpp"
 
 // Функция для вывода справки
 void printHelp() {
@@ -79,26 +80,31 @@ int main(int argc, char* argv[]) {
     CpuCollector cpu(true);
     MemoryCollector memory;
     DiskCollector disk(period);
+    NetCollector net(period);
 
     std::string cpu_info;
     std::string memory_info;
     std::string disk_info; 
+    std::string net_info;
 
     while (true) {
         // Update
         cpu.collect();
         memory.collect();
         disk.collect();
+        net.collect();
 
         cpu_info = cpu.getFormattedData();
         memory_info = memory.getFormattedData();
         disk_info = disk.getFormattedData();
+        net_info = net.getFormattedData();
 
         std::system("clear");
-        std::cout << "SysMon - press ctrl + C for exit.\n";
+        std::cout << "SysMon - press ctrl + C for exit.\n\n";
         std::cout << cpu_info << std::endl; 
         std::cout << memory_info << std::endl;
         std::cout << disk_info << std::endl;
+        std::cout << net_info << std::endl;
 
         std::this_thread::sleep_for(period);
     }
