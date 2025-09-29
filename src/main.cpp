@@ -7,6 +7,7 @@
 #include <chrono>
 #include <thread>
 
+#include "Logger.hpp"
 #include "CpuCollector.hpp"
 #include "MemoryCollector.hpp"
 #include "DiskCollector.hpp"
@@ -77,6 +78,10 @@ int main(int argc, char* argv[]) {
         }
     }
 
+    Logger logger("log.txt");
+    
+    logger.info("Test");
+    
     CpuCollector cpu(true);
     MemoryCollector memory;
     DiskCollector disk(period);
@@ -86,7 +91,7 @@ int main(int argc, char* argv[]) {
     std::string memory_info;
     std::string disk_info; 
     std::string net_info;
-
+    
     while (true) {
         // Update
         cpu.collect();
