@@ -2,6 +2,7 @@
 
 #include <cstdint>
 #include <vector>
+#include "Logger.hpp"
 #include "IMetricCollector.hpp"
 
 struct CpuTimes {
@@ -25,7 +26,7 @@ struct CpuStats {
 
 class CpuCollector : public IMetricCollector {
 public:
-    explicit CpuCollector(bool collect_per_core = false);
+    explicit CpuCollector(bool collect_per_core, Logger& logger);
     void collect() override;
     std::string getFormattedData() override;
 private:
@@ -44,4 +45,5 @@ private:
     std::vector<CpuTimes> prev_cores_;
     std::vector<double> core_usage_percents_;
 
+    Logger& logger_;
 };

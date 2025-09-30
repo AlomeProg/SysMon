@@ -5,8 +5,10 @@
 #include <iomanip>
 #include <iostream>
 
-NetCollector::NetCollector(std::chrono::milliseconds interval) :
-first_run_(true), interval_(interval){}
+NetCollector::NetCollector(std::chrono::milliseconds interval, Logger& logger) :
+first_run_(true), interval_(interval), logger_(logger){
+    logger_.info("NetCollector start.");
+}
 
 std::vector<NetInterface> readNetDev() {
     std::ifstream file("/proc/net/dev");

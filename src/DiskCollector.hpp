@@ -1,9 +1,10 @@
 #pragma once
 
-#include "IMetricCollector.hpp"
 #include <cstdint>
 #include <chrono>
 #include <vector>
+#include "Logger.hpp"
+#include "IMetricCollector.hpp"
 
 struct DiskStats {
     std::string name;
@@ -30,7 +31,7 @@ struct DiskMetrics {
 
 class DiskCollector : public IMetricCollector {
 public:
-    explicit DiskCollector(std::chrono::milliseconds interval);
+    explicit DiskCollector(std::chrono::milliseconds interval, Logger& logger);
     void collect() override;
     std::string getFormattedData() override;
 private:
@@ -38,4 +39,6 @@ private:
     bool first_run_;
     std::vector<DiskStats> prev_stats_;
     std::vector<DiskMetrics> current_metrics_;
+    
+    Logger& logger_;
 };

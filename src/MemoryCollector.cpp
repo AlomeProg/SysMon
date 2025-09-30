@@ -4,7 +4,10 @@
 #include <fstream>
 #include <sstream>
 
-MemoryCollector::MemoryCollector(){}
+MemoryCollector::MemoryCollector(Logger& logger):
+logger_(logger){
+    logger_.info("MemoryCollector start.");
+}
 
 void MemoryCollector::collect() {
     std::ifstream file("/proc/meminfo");
@@ -25,15 +28,15 @@ void MemoryCollector::collect() {
             uint64_t value = std::stoull(value_str);
 
             if (key == "MemTotal:") {
-                total_kb = value;
+                total_kb_ = value;
             } else if (key == "MemAvailable:") {
-                available_kb = value;
+                available_kb_ = value;
             } else if (key == "MemFree:") {
-                free_kb = value;
+                free_kb_ = value;
             } else if (key == "SwapTotal:") {
-                swap_total_kb = value;
+                swap_total_kb_ = value;
             } else if (key == "SwapFree:") {
-                swap_free_kb = value;
+                swap_free_kb_ = value;
             }
         } catch (const std::exception&) {
             // Пропускаем строки с некорректными числами
@@ -41,23 +44,24 @@ void MemoryCollector::collect() {
         }
     }
 
-    if (total_kb == 0) {
+    if (total_kb_ == 0) {
+        logger_.error("MemTotal not found in /proc/meminfo");
         throw std::runtime_error("MemTotal not found in /proc/meminfo");
     }
 }
 
 std::string MemoryCollector::getFormattedData() {
-    if (total_kb == 0) {
+    if (total_kb_ == 0) {
         return "Memory: N/A";
     }
 
-    double used_kb = total_kb - available_kb;
-    double used_percent = (total_kb > 0)
-        ? (used_kb / total_kb) * 100.0
+    double used_kb = total_kb_ - available_kb_;
+    double used_percent = (total_kb_ > 0)
+        ? (used_kb / total_kb_) * 100.0
         : 0.0;
 
     // Переводим в GiB для удобства
-    double total_gb = total_kb / (1024.0 * 1024.0);
+    double total_gb = total_kb_ / (1024.0 * 1024.0);
     double used_gb = used_kb / (1024.0 * 1024.0);
 
     std::ostringstream oss;
@@ -66,9 +70,9 @@ std::string MemoryCollector::getFormattedData() {
         << used_gb << " GiB / " << total_gb << " GiB)";
 
     // Опционально: swap
-    if (swap_total_kb > 0) {
-        double swap_used = swap_total_kb - swap_free_kb;
-        double swap_percent = (swap_used / swap_total_kb) * 100.0;
+    if (swap_total_kb_ > 0) {
+        double swap_used = swap_total_kb_ - swap_free_kb_;
+        double swap_percent = (swap_used / swap_total_kb_) * 100.0;
         oss << " | Swap: " << swap_percent << "%\n";
     }
 

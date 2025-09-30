@@ -80,12 +80,12 @@ int main(int argc, char* argv[]) {
 
     Logger logger("log.txt");
     
-    logger.info("Test");
+    logger.info("Start with interval:" + std::to_string(period.count()) + "ms");
     
-    CpuCollector cpu(true);
-    MemoryCollector memory;
-    DiskCollector disk(period);
-    NetCollector net(period);
+    CpuCollector cpu(true, logger);
+    MemoryCollector memory(logger);
+    DiskCollector disk(period, logger);
+    NetCollector net(period, logger);
 
     std::string cpu_info;
     std::string memory_info;

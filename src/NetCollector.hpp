@@ -2,6 +2,7 @@
 
 #include <chrono>
 #include <vector>
+#include "Logger.hpp"
 #include "IMetricCollector.hpp"
 
 struct NetInterface {
@@ -18,7 +19,7 @@ struct NetMetrics {
 
 class NetCollector : public IMetricCollector {
 public:
-    explicit NetCollector(std::chrono::milliseconds interval);
+    explicit NetCollector(std::chrono::milliseconds interval, Logger& logger);
     void collect() override;
     std::string getFormattedData() override;
 private:
@@ -26,4 +27,5 @@ private:
     bool first_run_;
     std::vector<NetInterface> prev_stats_;
     std::vector<NetMetrics> current_metrics_;
+    Logger& logger_;
 };

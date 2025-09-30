@@ -4,8 +4,10 @@
 #include <fstream>
 #include <sstream>
 
-CpuCollector::CpuCollector(bool collect_per_core) : 
-    collect_per_core_(collect_per_core){}
+CpuCollector::CpuCollector(bool collect_per_core, Logger& logger) : 
+collect_per_core_(collect_per_core), logger_(logger){
+    logger_.info("CpuCollector start.");
+}
 
 CpuTimes parseCpuLine(const std::string& line) {
     std::istringstream iss(line);

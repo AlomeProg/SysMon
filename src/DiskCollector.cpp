@@ -6,8 +6,10 @@
 #include <sstream>
 
 
-DiskCollector::DiskCollector(std::chrono::milliseconds interval) :
-first_run_(true), interval_(interval) {}
+DiskCollector::DiskCollector(std::chrono::milliseconds interval, Logger& logger) :
+first_run_(true), interval_(interval), logger_(logger) {
+    logger_.info("DiskCollector start.");
+}
 
 std::vector<DiskStats> readDiskStats() {
     std::ifstream file("/proc/diskstats");
