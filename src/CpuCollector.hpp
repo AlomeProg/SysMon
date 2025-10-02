@@ -35,6 +35,8 @@ private:
         const std::vector<CpuTimes>& current_cores,
         const std::vector<CpuTimes>& previous_cores
     );
+    CpuTimes parseCpuLine(const std::string& line);
+    CpuStats readAllCpuCores();
 
     bool collect_per_core_;
     bool first_run_ = true;
@@ -44,6 +46,7 @@ private:
 
     std::vector<CpuTimes> prev_cores_;
     std::vector<double> core_usage_percents_;
+    std::uint32_t count_cores_;
 
     Logger& logger_;
 };

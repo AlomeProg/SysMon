@@ -3,13 +3,20 @@
 #include <iostream>
 #include <fstream>
 #include <sstream>
+#include <unistd.h>
 
 CpuCollector::CpuCollector(bool collect_per_core, Logger& logger) : 
-collect_per_core_(collect_per_core), logger_(logger){
-    logger_.info("CpuCollector start.");
+collect_per_core_(collect_per_core), logger_(logger), count_cores_(sysconf(_SC_NPROCESSORS_ONLN)){
+    logger_.info(
+        "CpuCollector start. Per core statistics is " + 
+        std::string((collect_per_core_) ? "enable.":"disable."));
+    if(collect_per_core_ == true) {
+        prev_cores_.reserve(count_cores_);
+        core_usage_percents_.reserve(count_cores_);
+    }
 }
 
-CpuTimes parseCpuLine(const std::string& line) {
+CpuTimes CpuCollector::parseCpuLine(const std::string& line) {
     std::istringstream iss(line);
     std::string token;
     iss >> token; 
@@ -19,12 +26,14 @@ CpuTimes parseCpuLine(const std::string& line) {
         std::size_t pos;
         std::uint64_t val = std::stoull(token, &pos);
         if (pos != token.size()) {
+            logger_.error("Invalid number in CPU line");
             throw std::runtime_error("Invalid number in CPU line");
         }
         values.push_back(val);
     }
 
     if (values.size() < 10) {
+        logger_.error("Not enough fields in CPU line");
         throw std::runtime_error("Not enough fields in CPU line");
     }
 
@@ -33,10 +42,11 @@ CpuTimes parseCpuLine(const std::string& line) {
                     values[8], values[9]};
 }
 
-CpuStats readAllCpuCores() {
+CpuStats CpuCollector::readAllCpuCores() {
     std::ifstream file("/proc/stat");
     if (!file.is_open()) {
-        throw std::runtime_error("Cannot open \"/proc/stat\"");
+        logger_.error("Cannot open /proc/stat");
+        throw std::runtime_error("Cannot open /proc/stat");
     }
 
     CpuStats stats;
@@ -53,6 +63,7 @@ CpuStats readAllCpuCores() {
         }
     }
     if (!stats.has_total) {
+        logger_.error("Missing total CPU line in /proc/stat");
         throw std::runtime_error("Missing total CPU line in /proc/stat");
     }
 
@@ -81,6 +92,7 @@ void CpuCollector::collect() {
             prev_cores_ = std::move(current.per_core);
         }
     } catch (const std::exception& e) {
+        logger_.error(std::string(e.what()));
         std::cout << "Error:" << std::string(e.what());
     }
 }
@@ -151,7 +163,7 @@ std::string CpuCollector::getFormattedData() {
     if (cpu_usage_percent_ < 0) {
         oss << "CPU: N/A";
     } else {
-        oss << "CPU: " << cpu_usage_percent_ << "%\n";
+        oss << "CPU " << count_cores_ << ": " << cpu_usage_percent_ << "%\n";
     }
 
     if (collect_per_core_ && !core_usage_percents_.empty()) {
