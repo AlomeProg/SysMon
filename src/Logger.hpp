@@ -2,6 +2,7 @@
 
 #include <string>
 #include <fstream>
+#include <mutex>
 
 class Logger {
 public:
@@ -17,4 +18,5 @@ public:
 private:
     std::ofstream file_;
     Level min_level_;
+    std::mutex mutex_;
 };

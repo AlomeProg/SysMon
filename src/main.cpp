@@ -113,27 +113,5 @@ int main(int argc, char* argv[]) {
 
         std::this_thread::sleep_for(period);
     }
-
-    // sysmon help
-    // sysmon 
-    // sysmon -p=1s
-    // sysmon -p=200ms
-    // sysmon --period=2s
-    // sysmon --period=300ms
-
-
-    // for (int i = 0; i < 5; ++i) {
-    //     cpu.collect();
-    //     std::cout << cpu.getFormattedData() << "\n";
-    //     std::this_thread::sleep_for(std::chrono::milliseconds(200));
-    // }
-
-
-    // for (int i = 0; i < 5; ++i) {
-    //     memory.collect();
-    //     std::cout << memory.getFormattedData() << "\n";
-    //     std::this_thread::sleep_for(std::chrono::milliseconds(200));
-    // }
-
     return 0;
 }

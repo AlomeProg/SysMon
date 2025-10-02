@@ -49,7 +49,7 @@ std::string getCurrentTimestamp() {
 
 void Logger::log(Level level, const std::string& message) {
     if (!file_.is_open()) return;
-
+    std::lock_guard<std::mutex> lock(mutex_);
     file_ << "[" << getCurrentTimestamp() << "] "
           << levelToString(level) << ": "
           << message << "\n";
