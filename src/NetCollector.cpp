@@ -6,7 +6,9 @@
 #include <iostream>
 
 NetCollector::NetCollector(std::chrono::milliseconds interval, Logger& logger) :
-first_run_(true), interval_(interval), logger_(logger){
+interval_(interval), 
+first_run_(true), 
+logger_(logger){
     logger_.info("NetCollector start.");
 }
 

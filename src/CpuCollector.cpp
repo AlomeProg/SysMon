@@ -6,7 +6,9 @@
 #include <unistd.h>
 
 CpuCollector::CpuCollector(bool collect_per_core, Logger& logger) : 
-collect_per_core_(collect_per_core), logger_(logger), count_cores_(sysconf(_SC_NPROCESSORS_ONLN)){
+collect_per_core_(collect_per_core), 
+count_cores_(sysconf(_SC_NPROCESSORS_ONLN)),
+logger_(logger) {
     logger_.info(
         "CpuCollector start. Per core statistics is " + 
         std::string((collect_per_core_) ? "enable.":"disable."));

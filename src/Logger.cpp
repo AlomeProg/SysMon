@@ -6,7 +6,7 @@
 #include <ctime>
 
 Logger::Logger(const std::string& filename, Level min_level) :
-min_level_(Level::INFO) {
+min_level_(min_level) {
     file_.open(filename);
 }
 
