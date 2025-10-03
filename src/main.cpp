@@ -6,7 +6,9 @@
 #include <string>
 #include <chrono>
 #include <thread>
+#include <vector>
 
+#include "ThreadPool.hpp"
 #include "Logger.hpp"
 #include "CpuCollector.hpp"
 #include "MemoryCollector.hpp"
@@ -14,16 +16,20 @@
 #include "NetCollector.hpp"
 
 // Функция для вывода справки
+using std::future;
+
 void printHelp() {
-    std::cout << "Usage: sysmon [OPTIONS]\n"
-              << "Options:\n"
-              << "  help                Show this help message\n"
-              << "  -p=<duration>       Set update period (e.g., -p=1s, -p=200ms)\n"
-              << "  --period=<duration> Set update period (e.g., --period=2s, --period=300ms)\n"
-              << "\n"
-              << "Duration format:\n"
-              << "  <number>s   - seconds (e.g., 1s, 5s)\n"
-              << "  <number>ms  - milliseconds (e.g., 200ms, 300ms)\n";
+  std::cout
+      << "Usage: sysmon [OPTIONS]\n"
+      << "Options:\n"
+      << "  help                Show this help message\n"
+      << "  -p=<duration>       Set update period (e.g., -p=1s, -p=200ms)\n"
+      << "  --period=<duration> Set update period (e.g., --period=2s, "
+         "--period=300ms)\n"
+      << "\n"
+      << "Duration format:\n"
+      << "  <number>s   - seconds (e.g., 1s, 5s)\n"
+      << "  <number>ms  - milliseconds (e.g., 200ms, 300ms)\n";
 }
 
 void printVersion() {
@@ -79,39 +85,40 @@ int main(int argc, char* argv[]) {
     }
 
     Logger logger("log.txt");
-    
-    logger.info("Start with interval:" + std::to_string(period.count()) + "ms");
-    
-    CpuCollector cpu(true, logger);
-    MemoryCollector memory(logger);
-    DiskCollector disk(period, logger);
-    NetCollector net(period, logger);
+    logger.info("Start with interval: " + std::to_string(period.count()) + "ms");
 
-    std::string cpu_info;
-    std::string memory_info;
-    std::string disk_info; 
-    std::string net_info;
-    
+    std::unique_ptr<CpuCollector> cpu = std::make_unique<CpuCollector>(true, logger);
+    std::unique_ptr<MemoryCollector> memory = std::make_unique<MemoryCollector>(logger);
+    std::unique_ptr<DiskCollector> disk = std::make_unique<DiskCollector>(period, logger);
+    std::unique_ptr<NetCollector> net = std::make_unique<NetCollector>(period, logger);
+
+    std::vector<std::unique_ptr<IMetricCollector>> collectors;
+    collectors.push_back(std::move(cpu));
+    collectors.push_back(std::move(memory));
+    collectors.push_back(std::move(disk));
+    collectors.push_back(std::move(net));
+
+    ThreadPool pool(collectors.size());
+
     while (true) {
-        // Update
-        cpu.collect();
-        memory.collect();
-        disk.collect();
-        net.collect();
-
-        cpu_info = cpu.getFormattedData();
-        memory_info = memory.getFormattedData();
-        disk_info = disk.getFormattedData();
-        net_info = net.getFormattedData();
+        std::vector<std::future<void>> futures;
+        for (std::unique_ptr<IMetricCollector>& collector : collectors) {
+            futures.emplace_back(pool.enqueue([&collector]() {
+                collector->collect();
+            }));
+        }
+        for (std::future<void>& f : futures) {
+          f.get();
+        }
 
         std::system("clear");
-        std::cout << "SysMon - press ctrl + C for exit.\n\n";
-        std::cout << cpu_info << std::endl; 
-        std::cout << memory_info << std::endl;
-        std::cout << disk_info << std::endl;
-        std::cout << net_info << std::endl;
+        std::cout << "SysMon - press ctrl + C for exit.\n";
+        for (std::unique_ptr<IMetricCollector>& collector : collectors) {
+            std::cout << collector->getFormattedData() << std::endl;
+        }
 
         std::this_thread::sleep_for(period);
     }
+
     return 0;
 }
