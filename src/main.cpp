@@ -16,8 +16,6 @@
 #include "NetCollector.hpp"
 
 // Функция для вывода справки
-using std::future;
-
 void printHelp() {
   std::cout
       << "Usage: sysmon [OPTIONS]\n"
@@ -25,8 +23,10 @@ void printHelp() {
       << "  help                Show this help message\n"
       << "  version             Show version\n"
       << "  -i=<duration>       Set update interval (e.g., -i=1s, -i=200ms)\n"
-      << "  --interval=<duration> Set update interval (e.g., --interval=2s, "
-         "--interval=300ms)\n"
+      << "  --interval=<duration> Same as -i\n"
+      << "  -l=<file>           Set log file path (default: log.txt)\n"
+      << "  --log-file=<file>   Same as -l\n"
+      << "  --per-core          Enable per-CPU-core statistics\n"
       << "\n"
       << "Duration format:\n"
       << "  <number>s   - seconds (e.g., 1s, 5s)\n"
@@ -59,36 +59,48 @@ std::chrono::milliseconds parseInterval(const std::string& periodStr) {
 }
 
 int main(int argc, char* argv[]) {
+    std::string log_filename = "log.txt";
+    bool per_core = false;
     std::chrono::milliseconds interval = std::chrono::seconds(1);
-    if (argc == 1) {
-        std::cout << "Running SysMon with default settings...\n";        
-    } else {
-        for (int i = 1; i < argc; i++) {
-            std::string arg = argv[i];
-            if (arg == "help") {
-                printHelp();
-                return 0;
-            } else if (arg == "version") {
-                printVersion();
-                return 0;
-            }
+    for (int i = 1; i < argc; i++) {
+        std::string arg = argv[i];
 
-            if (arg.substr(0, 3) == "-p=") {
-                interval = parseInterval(arg.substr(3));
-            } else if (arg.substr(0,9) == "--period=") {
-                interval = parseInterval(arg.substr(9));
-            } else {
-                std::cerr << "Unknown argument: " << arg << "\n";
-                std::cerr << "Use 'sysmon help' for usage information.\n";
-                return 1;
-            }
+        if (arg == "help") {
+            printHelp();
+            return 0;
+        } else if (arg == "version") {
+            printVersion();
+            return 0;
+        }
+        else if (arg.size() >= 3 && arg.substr(0, 3) == "-i=") {
+            interval = parseInterval(arg.substr(3));
+        }
+        else if (arg.size() >= 12 && arg.substr(0, 12) == "--interval=") {
+            interval = parseInterval(arg.substr(12));
+        }
+        else if (arg.size() >= 3 && arg.substr(0, 3) == "-l=") {
+            log_filename = arg.substr(3);
+        }
+        else if (arg.size() >= 11 && arg.substr(0, 11) == "--log-file=") {
+            log_filename = arg.substr(11);
+        }
+        else if (arg == "--per-core") {
+            per_core = true;
+        }
+        else {
+            std::cerr << "Unknown argument: " << arg << "\n";
+            std::cerr << "Use 'sysmon help' for usage information.\n";
+            return 1;
         }
     }
 
-    Logger logger("log.txt");
+    Logger logger(log_filename);
     logger.info("Start with interval: " + std::to_string(interval.count()) + "ms");
+    if (per_core) {
+        logger.info("Per-core CPU stats enabled");
+    }
 
-    std::unique_ptr<CpuCollector> cpu = std::make_unique<CpuCollector>(true, logger);
+    std::unique_ptr<CpuCollector> cpu = std::make_unique<CpuCollector>(per_core, logger);
     std::unique_ptr<MemoryCollector> memory = std::make_unique<MemoryCollector>(logger);
     std::unique_ptr<DiskCollector> disk = std::make_unique<DiskCollector>(interval, logger);
     std::unique_ptr<NetCollector> net = std::make_unique<NetCollector>(interval, logger);
@@ -108,7 +120,7 @@ int main(int argc, char* argv[]) {
                 collector->collect();
             }));
         }
-        for (std::future<void>& f : futures) {
+        for (std::future<void> &f : futures) {
           f.get();
         }
 
