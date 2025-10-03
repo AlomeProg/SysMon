@@ -23,9 +23,10 @@ void printHelp() {
       << "Usage: sysmon [OPTIONS]\n"
       << "Options:\n"
       << "  help                Show this help message\n"
-      << "  -p=<duration>       Set update period (e.g., -p=1s, -p=200ms)\n"
-      << "  --period=<duration> Set update period (e.g., --period=2s, "
-         "--period=300ms)\n"
+      << "  version             Show version\n"
+      << "  -i=<duration>       Set update interval (e.g., -i=1s, -i=200ms)\n"
+      << "  --interval=<duration> Set update interval (e.g., --interval=2s, "
+         "--interval=300ms)\n"
       << "\n"
       << "Duration format:\n"
       << "  <number>s   - seconds (e.g., 1s, 5s)\n"
@@ -37,7 +38,7 @@ void printVersion() {
 }
 
 // Функция для парсинга периода из строки вида "1s" или "200ms"
-std::chrono::milliseconds parsePeriod(const std::string& periodStr) {
+std::chrono::milliseconds parseInterval(const std::string& periodStr) {
     std::regex pattern(R"(^(\d+)(s|ms)$)");
     std::smatch match;
 
@@ -58,7 +59,7 @@ std::chrono::milliseconds parsePeriod(const std::string& periodStr) {
 }
 
 int main(int argc, char* argv[]) {
-    std::chrono::milliseconds period = std::chrono::seconds(1);
+    std::chrono::milliseconds interval = std::chrono::seconds(1);
     if (argc == 1) {
         std::cout << "Running SysMon with default settings...\n";        
     } else {
@@ -73,9 +74,9 @@ int main(int argc, char* argv[]) {
             }
 
             if (arg.substr(0, 3) == "-p=") {
-                period = parsePeriod(arg.substr(3));
+                interval = parseInterval(arg.substr(3));
             } else if (arg.substr(0,9) == "--period=") {
-                period = parsePeriod(arg.substr(9));
+                interval = parseInterval(arg.substr(9));
             } else {
                 std::cerr << "Unknown argument: " << arg << "\n";
                 std::cerr << "Use 'sysmon help' for usage information.\n";
@@ -85,12 +86,12 @@ int main(int argc, char* argv[]) {
     }
 
     Logger logger("log.txt");
-    logger.info("Start with interval: " + std::to_string(period.count()) + "ms");
+    logger.info("Start with interval: " + std::to_string(interval.count()) + "ms");
 
     std::unique_ptr<CpuCollector> cpu = std::make_unique<CpuCollector>(true, logger);
     std::unique_ptr<MemoryCollector> memory = std::make_unique<MemoryCollector>(logger);
-    std::unique_ptr<DiskCollector> disk = std::make_unique<DiskCollector>(period, logger);
-    std::unique_ptr<NetCollector> net = std::make_unique<NetCollector>(period, logger);
+    std::unique_ptr<DiskCollector> disk = std::make_unique<DiskCollector>(interval, logger);
+    std::unique_ptr<NetCollector> net = std::make_unique<NetCollector>(interval, logger);
 
     std::vector<std::unique_ptr<IMetricCollector>> collectors;
     collectors.push_back(std::move(cpu));
@@ -117,7 +118,7 @@ int main(int argc, char* argv[]) {
             std::cout << collector->getFormattedData() << std::endl;
         }
 
-        std::this_thread::sleep_for(period);
+        std::this_thread::sleep_for(interval);
     }
 
     return 0;
