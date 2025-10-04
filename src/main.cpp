@@ -62,6 +62,8 @@ int main(int argc, char* argv[]) {
     std::string log_filename = "log.txt";
     bool per_core = false;
     std::chrono::milliseconds interval = std::chrono::seconds(1);
+    std::chrono::time_point last_log_time = std::chrono::steady_clock::now();
+    std::chrono::milliseconds log_interval = std::chrono::seconds(120);
     for (int i = 1; i < argc; i++) {
         std::string arg = argv[i];
 
@@ -83,6 +85,9 @@ int main(int argc, char* argv[]) {
         }
         else if (arg.size() >= 11 && arg.substr(0, 11) == "--log-file=") {
             log_filename = arg.substr(11);
+        }
+        else if (arg.size() >= 15 && arg.substr(0, 15) == "--log-interval=") {
+            log_interval = parseInterval(arg.substr(15));
         }
         else if (arg == "--per-core") {
             per_core = true;
@@ -128,6 +133,23 @@ int main(int argc, char* argv[]) {
         std::cout << "SysMon - press ctrl + C for exit.\n";
         for (std::unique_ptr<IMetricCollector>& collector : collectors) {
             std::cout << collector->getFormattedData() << std::endl;
+        }
+        
+        std::chrono::time_point now = std::chrono::steady_clock::now();
+        if (now - last_log_time >= log_interval) {
+            logger.info("=== System Summary start ===");
+            for (std::unique_ptr<IMetricCollector>& collector : collectors) {
+                std::string data = collector->getFormattedData();
+                std::istringstream iss(data);
+                std::string line;
+                while (std::getline(iss, line)) {
+                    if (!line.empty()) {
+                        logger.info(line);
+                    }
+                }
+            }
+            last_log_time = now;
+            logger.info("=== System Summary end ===");
         }
 
         std::this_thread::sleep_for(interval);
