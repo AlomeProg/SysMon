@@ -63,7 +63,7 @@ std::chrono::milliseconds parseInterval(const std::string& periodStr) {
 volatile std::sig_atomic_t stop_requested = 0;
 
 void handleSignal(int signal) {
-    if (signal == SIGINT) {
+    if (signal == SIGINT || signal == SIGTERM) {
         stop_requested = 1;
     }
 }
@@ -129,6 +129,7 @@ int main(int argc, char* argv[]) {
     ThreadPool pool(collectors.size());
 
     std::signal(SIGINT, handleSignal);
+    std::signal(SIGTERM, handleSignal);
 
     TerminalScreen terminal;
 
