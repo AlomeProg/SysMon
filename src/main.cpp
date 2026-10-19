@@ -7,6 +7,7 @@
 #include <chrono>
 #include <thread>
 #include <vector>
+#include <csignal>
 
 #include "ThreadPool.hpp"
 #include "Logger.hpp"
@@ -14,6 +15,7 @@
 #include "MemoryCollector.hpp"
 #include "DiskCollector.hpp"
 #include "NetCollector.hpp"
+#include "TerminalScreen.hpp"
 
 // Функция для вывода справки
 void printHelp() {
@@ -55,6 +57,14 @@ std::chrono::milliseconds parseInterval(const std::string& periodStr) {
         return std::chrono::milliseconds(value);
     } else {
         throw std::invalid_argument("Unknown time unit: " + unit);
+    }
+}
+
+volatile std::sig_atomic_t stop_requested = 0;
+
+void handleSignal(int signal) {
+    if (signal == SIGINT) {
+        stop_requested = 1;
     }
 }
 
@@ -118,7 +128,11 @@ int main(int argc, char* argv[]) {
 
     ThreadPool pool(collectors.size());
 
-    while (true) {
+    std::signal(SIGINT, handleSignal);
+
+    TerminalScreen terminal;
+
+    while (!stop_requested) {
         std::vector<std::future<void>> futures;
         for (std::unique_ptr<IMetricCollector>& collector : collectors) {
             futures.emplace_back(pool.enqueue([&collector]() {
@@ -129,11 +143,13 @@ int main(int argc, char* argv[]) {
           f.get();
         }
 
-        std::system("clear");
+        std::cout << "\033[H";
         std::cout << "SysMon - press ctrl + C for exit.\n";
         for (std::unique_ptr<IMetricCollector>& collector : collectors) {
             std::cout << collector->getFormattedData() << std::endl;
         }
+        std::cout << "\033[J";
+        std::cout.flush();
         
         std::chrono::time_point now = std::chrono::steady_clock::now();
         if (now - last_log_time >= log_interval) {
