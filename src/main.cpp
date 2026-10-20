@@ -68,6 +68,15 @@ void handleSignal(int signal) {
     }
 }
 
+void printFormattedLines(const std::string& data) {
+    std::istringstream stream(data);
+    std::string line;
+
+    while (std::getline(stream, line)) {
+        std::cout << line << "\033[K\n";
+    }
+}
+
 int main(int argc, char* argv[]) {
     std::string log_filename = "log.txt";
     bool per_core = false;
@@ -145,10 +154,14 @@ int main(int argc, char* argv[]) {
         }
 
         std::cout << "\033[H";
-        std::cout << "SysMon - press ctrl + C for exit.\n";
-        for (std::unique_ptr<IMetricCollector>& collector : collectors) {
-            std::cout << collector->getFormattedData() << std::endl;
+
+        std::cout << "SysMon - press Ctrl+C for exit.\033[K\n";
+        std::cout << "\033[K\n";
+
+        for (const auto& collector : collectors) {
+            printFormattedLines(collector->getFormattedData());
         }
+
         std::cout << "\033[J";
         std::cout.flush();
         
