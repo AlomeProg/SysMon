@@ -27,6 +27,12 @@ make
 ```
 This produces the executable `sysmon` in the project root.
 
+### Clean
+```bash
+make clean
+```
+The project root will be cleaned up along with the executable file.
+
 ## Usage
 
 ```bash
