@@ -68,7 +68,7 @@ std::vector<DiskStats> readDiskStats() {
 }
 
 void DiskCollector::collect() {
-try {
+    try {
         std::vector<DiskStats> current = readDiskStats();
 
         if (first_run_) {
