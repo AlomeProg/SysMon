@@ -1,5 +1,6 @@
 // g++ src/main.cpp src/CpuCollector.cpp src/MemoryCollector.cpp src/DiskCollector.cpp -o sysmon
 
+#include <cstdlib>
 #include <iostream>
 #include <unistd.h>
 #include <regex>
@@ -83,39 +84,44 @@ int main(int argc, char* argv[]) {
     std::chrono::milliseconds interval = std::chrono::seconds(1);
     std::chrono::time_point last_log_time = std::chrono::steady_clock::now();
     std::chrono::milliseconds log_interval = std::chrono::seconds(120);
-    for (int i = 1; i < argc; i++) {
-        std::string arg = argv[i];
+    try {
+        for (int i = 1; i < argc; i++) {
+            std::string arg = argv[i];
 
-        if (arg == "help") {
-            printHelp();
-            return 0;
-        } else if (arg == "version") {
-            printVersion();
-            return 0;
+            if (arg == "help") {
+                printHelp();
+                return 0;
+            } else if (arg == "version") {
+                printVersion();
+                return 0;
+            }
+            else if (arg.size() >= 3 && arg.substr(0, 3) == "-i=") {
+                interval = parseInterval(arg.substr(3));
+            }
+            else if (arg.size() >= 12 && arg.substr(0, 12) == "--interval=") {
+                interval = parseInterval(arg.substr(12));
+            }
+            else if (arg.size() >= 3 && arg.substr(0, 3) == "-l=") {
+                log_filename = arg.substr(3);
+            }
+            else if (arg.size() >= 11 && arg.substr(0, 11) == "--log-file=") {
+                log_filename = arg.substr(11);
+            }
+            else if (arg.size() >= 15 && arg.substr(0, 15) == "--log-interval=") {
+                log_interval = parseInterval(arg.substr(15));
+            }
+            else if (arg == "--per-core") {
+                per_core = true;
+            }
+            else {
+                std::cerr << "Unknown argument: " << arg << "\n";
+                std::cerr << "Use 'sysmon help' for usage information.\n";
+                return 1;
+            }
         }
-        else if (arg.size() >= 3 && arg.substr(0, 3) == "-i=") {
-            interval = parseInterval(arg.substr(3));
-        }
-        else if (arg.size() >= 12 && arg.substr(0, 12) == "--interval=") {
-            interval = parseInterval(arg.substr(12));
-        }
-        else if (arg.size() >= 3 && arg.substr(0, 3) == "-l=") {
-            log_filename = arg.substr(3);
-        }
-        else if (arg.size() >= 11 && arg.substr(0, 11) == "--log-file=") {
-            log_filename = arg.substr(11);
-        }
-        else if (arg.size() >= 15 && arg.substr(0, 15) == "--log-interval=") {
-            log_interval = parseInterval(arg.substr(15));
-        }
-        else if (arg == "--per-core") {
-            per_core = true;
-        }
-        else {
-            std::cerr << "Unknown argument: " << arg << "\n";
-            std::cerr << "Use 'sysmon help' for usage information.\n";
-            return 1;
-        }
+    } catch (std::invalid_argument const& ex) {
+        std::cout << ex.what() << '\n';
+        exit(EXIT_FAILURE);
     }
 
     Logger logger(log_filename);
